@@ -31,6 +31,7 @@
     <maven-checkstyle.version>3.6.0</maven-checkstyle.version>
     <nohttp-checkstyle.version>0.0.11</nohttp-checkstyle.version>
     <spring-format.version>0.0.47</spring-format.version>
+    <sonar-maven-plugin.version>5.1.0.4751</sonar-maven-plugin.version>
   </properties>
 
   <licenses>
@@ -225,6 +226,11 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>${sonar-maven-plugin.version}</version>
       </plugin>
       <plugin>
         <groupId>org.graalvm.buildtools</groupId>
