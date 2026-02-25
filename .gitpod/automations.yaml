@@ -1,0 +1,46 @@
+tasks:
+  run:
+    command: |
+      ./mvnw spring-boot:run
+    dependsOn:
+      - init
+    name: "Run PetClinic App"
+    triggeredBy:
+      - postDevcontainerStart
+      - manual
+  init:
+    command: |
+      ./mvnw clean install -U -DskipTests
+    name: "Build"
+    triggeredBy:
+      - manual
+      - prebuild
+  sonar-maven:
+    command: |
+      ./mvnw verify sonar:sonar \
+        -Dsonar.host.url=https://sonarcloud.io \
+        -Dsonar.organization=$SONARQUBE_ORG \
+        -Dsonar.token=$SONARQUBE_TOKEN \
+        -Dsonar.projectKey=ona-samples_sonarcube-integration
+    dependsOn:
+      - init
+    name: "SonarQube Scan (Maven)"
+    triggeredBy:
+      - manual
+      - prebuild
+  sonar-cli:
+    command: |
+      ./mvnw compile -q && \
+      sonar-scanner \
+        -Dsonar.host.url=https://sonarcloud.io \
+        -Dsonar.organization=$SONARQUBE_ORG \
+        -Dsonar.token=$SONARQUBE_TOKEN \
+        -Dsonar.projectKey=ona-samples_sonarcube-integration \
+        -Dsonar.sources=src/main/java \
+        -Dsonar.tests=src/test/java \
+        -Dsonar.java.binaries=target/classes
+    dependsOn:
+      - init
+    name: "SonarQube Scan (CLI)"
+    triggeredBy:
+      - manual
