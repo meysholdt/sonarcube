@@ -4,7 +4,7 @@
       "name": "sonarqube",
       "command": "docker",
       "args": [
-        "run", "-i", "--init", "--pull=always",
+        "run", "-i", "--init",
         "--name", "sonarqube-mcp-server",
         "--rm",
         "-e", "SONARQUBE_TOKEN",
