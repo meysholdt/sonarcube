@@ -1,3 +1,11 @@
+name: fix-sonar-issue
+description: >-
+  Picks the highest-severity open SonarQube issue, applies a fix,
+  verifies tests pass, and opens a pull request.
+triggers:
+  - context:
+      projects: {}
+    manual: {}
 action:
   limits:
     maxParallel: 1
@@ -24,10 +32,8 @@ action:
           1. Create a new git branch named "sonar-fix/<rule-key>" (e.g. sonar-fix/java-S2699).
           2. Apply the minimal fix that resolves the SonarQube issue while preserving
               existing behavior. Follow the project's code style and conventions.
-          3. Commit the fix with message: "Fix SonarQube <rule-key>: <short description>"
-              Add co-author: "Co-authored-by: Ona <no-reply@ona.com>"
 
-          Do NOT run tests yet.
+          Do NOT commit or run tests yet.
     - agent:
         prompt: |
           Verify the fix from the previous step:
@@ -40,6 +46,10 @@ action:
               d. Rerun `./mvnw compile test`.
               e. Repeat until all tests pass.
           3. Once tests pass, confirm the fix is complete.
+    - agent:
+        prompt: |
+          Commit the fix with message: "Fix SonarQube <rule-key>: <short description>"
+          Add co-author: "Co-authored-by: Ona <no-reply@ona.com>"
     - pullRequest:
         branch: sonar-fix/<issue>
         title: 'Sonar-Fix: <title>'
@@ -68,11 +78,3 @@ action:
 
           - [x] `./mvnw compile test` passes
           - [x] Fix is minimal and preserves existing behavior
-description: >-
-  Picks the highest-severity open SonarQube issue, applies a fix,
-  verifies tests pass, and opens a pull request.
-name: fix-sonar-issue
-triggers:
-  - context:
-      projects: {}
-    manual: {}
