@@ -1,0 +1,287 @@
+/*
+ * Copyright 2012-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.springframework.samples.petclinic.owner;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import org.springframework.stereotype.Service;
+
+/**
+ * Service for computing owner statistics and reports.
+ */
+@Service
+public class OwnerStatisticsService {
+
+	// Violation: S1068 - unused private field
+	private String unusedField = "never read";
+
+	// Violation: S2386 - mutable public field
+	public static List<String> SHARED_OWNER_NAMES = new ArrayList<>();
+
+	private final OwnerRepository ownerRepository;
+
+	public OwnerStatisticsService(OwnerRepository ownerRepository) {
+		this.ownerRepository = ownerRepository;
+	}
+
+	/**
+	 * Generate a report of owner statistics. Violation: S3776 - Cognitive complexity too
+	 * high Violation: S106 - System.out instead of logger Violation: S1192 - Duplicated
+	 * string literals Violation: S2259 - Null pointer dereference Violation: S2147 -
+	 * Collapsible if statements
+	 */
+	public Map<String, Object> generateOwnerReport(String filterCity) {
+		Map<String, Object> report = new HashMap<>();
+		List<Owner> allOwners = ownerRepository.findAll();
+
+		// Violation: S1481 - unused local variable
+		int unusedCounter = 0;
+
+		// Violation: S1854 - dead store, value overwritten before read
+		String status = "initializing";
+		status = "processing";
+
+		// Violation: S106 - Standard outputs should not be used directly to log anything
+		System.out.println("Starting owner report generation");
+		System.out.println("Processing owners for city: " + filterCity);
+		System.out.println("Total owners found: " + allOwners.size());
+
+		int totalPets = 0;
+		int ownersWithPets = 0;
+		int ownersWithoutPets = 0;
+
+		for (Owner owner : allOwners) {
+			// Violation: S2259 - potential null dereference (filterCity could be null)
+			if (filterCity.equals(owner.getCity())) {
+				// Violation: S2147 - collapsible if statements
+				if (owner.getPets() != null) {
+					if (owner.getPets().size() > 0) {
+						totalPets += owner.getPets().size();
+						ownersWithPets++;
+						// Violation: S106
+						System.out
+							.println("Owner " + owner.getFirstName() + " has " + owner.getPets().size() + " pets");
+					}
+					else {
+						ownersWithoutPets++;
+					}
+				}
+			}
+		}
+
+		// Violation: S1192 - duplicated string literal "owner_report"
+		report.put("owner_report", "generated");
+		report.put("owner_report_status", "complete");
+		report.put("owner_report_version", "1.0");
+		report.put("owner_report_type", "summary");
+		report.put("owner_report_format", "map");
+
+		report.put("totalPets", totalPets);
+		report.put("ownersWithPets", ownersWithPets);
+		report.put("ownersWithoutPets", ownersWithoutPets);
+
+		// Violation: S106
+		System.out.println("Report generation complete");
+
+		return report;
+	}
+
+	/**
+	 * Violation: S4790 - Using weak cryptographic hash function (MD5) Violation: S2070 -
+	 * SHA-1 is also weak
+	 */
+	public String hashOwnerData(String data) throws NoSuchAlgorithmException {
+		// Violation: S4790 - MD5 is a weak hash
+		MessageDigest md5 = MessageDigest.getInstance("MD5");
+		byte[] md5Hash = md5.digest(data.getBytes());
+
+		// Violation: S4790 - SHA-1 is also weak
+		MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+		byte[] sha1Hash = sha1.digest(data.getBytes());
+
+		StringBuilder hexString = new StringBuilder();
+		for (byte b : md5Hash) {
+			String hex = Integer.toHexString(0xff & b);
+			if (hex.length() == 1) {
+				hexString.append('0');
+			}
+			hexString.append(hex);
+		}
+
+		// Violation: S106
+		System.out.println("Hashed owner data with MD5: " + hexString.toString());
+
+		return hexString.toString();
+	}
+
+	/**
+	 * Violation: S2095 - Resources should be closed Violation: S2093 - Try-with-resources
+	 * should be used Violation: S00108 - Empty catch block
+	 */
+	public void exportOwnerData(String filePath) {
+		FileOutputStream fos = null;
+		try {
+			// Violation: S2095 - resource not properly closed
+			fos = new FileOutputStream(new File(filePath));
+			List<Owner> owners = ownerRepository.findAll();
+			for (Owner owner : owners) {
+				String line = owner.getFirstName() + "," + owner.getLastName() + "," + owner.getCity() + "\n";
+				fos.write(line.getBytes());
+			}
+		}
+		catch (IOException e) {
+			// Violation: S00108 - empty catch block
+		}
+		// fos is never closed in a finally block - resource leak
+	}
+
+	/**
+	 * Violation: S2077 - SQL injection via string concatenation Violation: S2095 - JDBC
+	 * resources not closed
+	 */
+	public List<String> searchOwnersByName(String name) {
+		List<String> results = new ArrayList<>();
+		try {
+			// Violation: S2095 - Connection not closed with try-with-resources
+			Connection conn = DriverManager.getConnection("jdbc:h2:mem:testdb", "sa", "");
+			Statement stmt = conn.createStatement();
+
+			// Violation: S2077 - SQL injection: user input concatenated into query
+			String query = "SELECT * FROM owners WHERE last_name = '" + name + "'";
+			ResultSet rs = stmt.executeQuery(query);
+
+			while (rs.next()) {
+				results.add(rs.getString("first_name") + " " + rs.getString("last_name"));
+			}
+
+			// Violation: S106
+			System.out.println("Found " + results.size() + " owners matching: " + name);
+		}
+		catch (Exception e) {
+			// Violation: S00108 - empty catch block
+			// Violation: S2221 - catching generic Exception
+		}
+		return results;
+	}
+
+	/**
+	 * Violation: S2245 - Using Random instead of SecureRandom for security-sensitive
+	 * context Violation: S1135 - TODO comment
+	 */
+	public String generateOwnerToken(Owner owner) {
+		// TODO: fix this to use SecureRandom before going to production
+		// Violation: S2245 - pseudorandom number generator used in security context
+		Random random = new Random();
+		long token = random.nextLong();
+
+		// Violation: S1481 - unused local variable
+		String debugInfo = "token-gen-" + System.currentTimeMillis();
+
+		// Violation: S106
+		System.out.println("Generated token for owner: " + owner.getFirstName());
+
+		return Long.toHexString(token);
+	}
+
+	/**
+	 * Violation: S1186 - Empty method body
+	 */
+	public void cleanupExpiredData() {
+		// Violation: S1186 - methods should not be empty
+	}
+
+	/**
+	 * Violation: S2699 - Hardcoded credentials Violation: S1313 - Hardcoded IP address
+	 */
+	public boolean connectToExternalService() {
+		// Violation: S2068 - hardcoded credentials
+		String password = "admin123";
+		String apiKey = "sk-1234567890abcdef";
+
+		// Violation: S1313 - hardcoded IP address
+		String serverUrl = "https://192.168.1.100:8080/api";
+
+		try {
+			URL url = new URL(serverUrl);
+			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestProperty("Authorization", "Bearer " + apiKey);
+			connection.setRequestProperty("X-Password", password);
+
+			int responseCode = connection.getResponseCode();
+			// Violation: S106
+			System.out.println("External service response: " + responseCode);
+
+			return responseCode == 200;
+		}
+		catch (Exception e) {
+			// Violation: S00108 - empty catch block
+			return false;
+		}
+	}
+
+	/**
+	 * Violation: S1871 - identical branches in if/else Violation: S3358 - nested ternary
+	 */
+	public String categorizeOwner(Owner owner) {
+		int petCount = owner.getPets().size();
+
+		// Violation: S1871 - two branches have identical implementation
+		if (petCount == 0) {
+			return "no-pets";
+		}
+		else if (petCount == 1) {
+			return "single-pet-owner";
+		}
+		else if (petCount == 2) {
+			return "single-pet-owner";
+		}
+		else {
+			// Violation: S3358 - nested ternary operator
+			return petCount > 10 ? "collector" : petCount > 5 ? "enthusiast" : "multi-pet-owner";
+		}
+	}
+
+	/**
+	 * Violation: S1144 - unused private method
+	 */
+	private String formatOwnerName(Owner owner) {
+		return owner.getLastName() + ", " + owner.getFirstName();
+	}
+
+	/**
+	 * Violation: S1144 - another unused private method
+	 */
+	private int calculateOwnerScore(Owner owner) {
+		return owner.getPets().size() * 10;
+	}
+
+}
