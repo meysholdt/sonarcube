@@ -59,7 +59,7 @@ action:
           | Field | Value |
           |-------|-------|
           | **Issue** | [View in SonarQube Cloud](https://sonarcloud.io/project/issues?id=ona-samples_sonarcube-integration&issues=<issue-key>&open=<issue-key>) |
-          | **Rule** | `<rule-key>` — [View rule](https://rules.sonarsource.com/java/RSPEC-<rule-number>) |
+          | **Rule** | `<rule-key>` — [View rule](https://sonarcloud.io/organizations/ona-samples/rules?open=<rule-key>&rule_key=<rule-key>) |
           | **Severity** | <severity> |
           | **Type** | <clean-code-attribute-category> |
           | **Message** | <sonar-message> |
