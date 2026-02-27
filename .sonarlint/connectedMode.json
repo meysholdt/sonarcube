@@ -1,0 +1,5 @@
+{
+    "sonarCloudOrganization": "ona-samples",
+    "projectKey": "ona-samples_sonarqube-cloud",
+    "region": "EU"
+}
