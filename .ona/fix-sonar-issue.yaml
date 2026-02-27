@@ -1,0 +1,69 @@
+name: fix-sonar-issue
+description: >-
+  Picks the highest-severity open SonarQube issue, applies a fix,
+  verifies tests pass, and opens a pull request.
+triggers:
+  - context:
+      projects: {}
+    manual: {}
+action:
+  limits:
+    maxParallel: 1
+    maxTotal: 10
+  steps:
+    - agent:
+        prompt: |
+          You have access to SonarQube tools via MCP. Use them to query the project
+          "ona-samples_sonarcube-integration" for open issues with BLOCKER or HIGH severity.
+
+          Pick the single highest-severity issue (BLOCKER > HIGH). If there are ties,
+          pick the one in production code (src/main) over test code (src/test).
+
+          For the selected issue:
+          1. Read the SonarQube rule details to understand what the rule requires.
+          2. Read the affected source file and surrounding context.
+          3. Note the rule key, severity, file path, line number, and the rule's message.
+
+          Do NOT make any code changes yet.
+    - agent:
+        prompt: |
+          Using the issue identified in the previous step:
+
+          1. Apply the minimal fix that resolves the SonarQube issue while preserving
+              existing behavior. Follow the project's code style and conventions.
+
+          Do NOT commit or run tests yet.
+    - agent:
+        prompt: |
+          Verify the fix from the previous step:
+
+          1. Run `./mvnw compile test` to compile and run all tests.
+          2. If compilation or tests fail:
+              a. Read the error output carefully.
+              b. Identify whether the failure is caused by the fix or a pre-existing issue.
+              c. If caused by the fix, adjust the code and amend the commit.
+              d. Rerun `./mvnw compile test`.
+              e. Repeat until all tests pass.
+          3. Once tests pass, confirm the fix is complete.
+    - pullRequest:
+        branch: sonar-fix/<issue>
+        title: 'Sonar-Fix: <title>'
+        description: |
+          ## SonarQube Issue
+
+          | Field | Value |
+          |-------|-------|
+          | **Issue** | [View in SonarQube Cloud](https://sonarcloud.io/project/issues?issueStatuses=OPEN%2CCONFIRMED&id=ona-samples_sonarqube-cloud&open=<issue-key>) |
+          | **Rule** | `<rule-key>` — [View rule](https://sonarcloud.io/organizations/ona-samples/rules?open=<rule-key>&rule_key=<rule-key>) |
+          | **Severity** | <severity> |
+          | **Type** | <clean-code-attribute-category> |
+          | **Message** | <sonar-message> |
+
+          ## What changed
+
+          <one-or-two-sentence explanation of the fix and why it resolves the issue>
+
+          ## Verification
+
+          - [x] `./mvnw compile test` passes
+          - [x] Fix is minimal and preserves existing behavior
